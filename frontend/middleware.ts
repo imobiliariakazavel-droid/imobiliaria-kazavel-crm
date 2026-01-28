@@ -58,8 +58,14 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Se o usuário não está logado e não está na página de login, redireciona para login
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
+  // Rotas públicas que não requerem autenticação
+  const publicRoutes = ['/login', '/reset-password']
+  const isPublicRoute = publicRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  )
+
+  // Se o usuário não está logado e não está em uma rota pública, redireciona para login
+  if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
