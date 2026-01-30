@@ -1,19 +1,14 @@
-import { LogoutButton } from "@/components/auth/LogoutButton";
-
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <div className="flex justify-end mb-4">
-          <LogoutButton />
-        </div>
-        <h1 className="text-4xl font-bold text-center mb-8">
+    <div className="max-w-5xl mx-auto">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">
           Imobiliária Kazavel CRM
         </h1>
-        <p className="text-center text-muted-foreground">
+        <p className="text-muted-foreground text-lg">
           Sistema de CRM desenvolvido com Next.js, TypeScript e Tailwind CSS
         </p>
       </div>
-    </main>
+    </div>
   );
 }
