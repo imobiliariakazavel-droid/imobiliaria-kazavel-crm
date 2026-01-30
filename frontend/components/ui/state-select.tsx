@@ -2,35 +2,23 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getCities, type City } from "@/lib/api/cities";
+import { getStates, type State } from "@/lib/api/states";
 import { cn } from "@/lib/utils";
 import { Loader2, ChevronDown } from "lucide-react";
 
-interface CitySelectProps {
+interface StateSelectProps {
   value: string;
   onChange: (value: string) => void;
   id?: string;
   disabled?: boolean;
-  stateId?: string;
-  initialCity?: { id: string; name: string; state?: { uf: string } } | null;
 }
 
 const ITEMS_PER_PAGE = 50;
 
-export function CitySelect({ value, onChange, id, disabled, stateId, initialCity }: CitySelectProps) {
+export function StateSelect({ value, onChange, id, disabled }: StateSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedCityData, setSelectedCityData] = useState<City | null>(
-    initialCity
-      ? {
-          id: initialCity.id,
-          name: initialCity.name,
-          created_at: "",
-          state: initialCity.state || { id: "", name: "", uf: "" },
-        }
-      : null
-  );
   const selectRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +31,7 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Buscar cidades com infinite scroll
+  // Buscar estados com infinite scroll
   const {
     data,
     fetchNextPage,
@@ -51,13 +39,12 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ["cities", debouncedSearch, stateId],
+    queryKey: ["states", debouncedSearch],
     queryFn: ({ pageParam = 1 }) =>
-      getCities({
+      getStates({
         page: pageParam,
         itemsPage: ITEMS_PER_PAGE,
         search: debouncedSearch || undefined,
-        stateId: stateId || undefined,
       }),
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination) return undefined;
@@ -65,45 +52,12 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
       return current_page < total_pages ? current_page + 1 : undefined;
     },
     initialPageParam: 1,
-    // Buscar mesmo sem stateId (busca todas as cidades)
   });
 
   // Flatten das páginas
-  const cities = data?.pages.flatMap((page) => page.data || []) || [];
+  const states = data?.pages.flatMap((page) => page.data || []) || [];
 
-  // Atualizar cidade selecionada quando initialCity mudar
-  useEffect(() => {
-    if (initialCity) {
-      // Se o value corresponde ao initialCity, ou se o value está vazio mas temos initialCity
-      if (initialCity.id === value || (value === "" && initialCity.id)) {
-        setSelectedCityData({
-          id: initialCity.id,
-          name: initialCity.name,
-          created_at: "",
-          state: initialCity.state || { id: "", name: "", uf: "" },
-        });
-      }
-    } else if (!value) {
-      // Se não há initialCity e não há value, limpar
-      setSelectedCityData(null);
-    }
-  }, [initialCity, value]);
-
-  // Atualizar cidade selecionada quando encontrar na lista (só se não tiver initialCity correspondente)
-  useEffect(() => {
-    if (value) {
-      // Só atualizar da lista se não temos initialCity correspondente ou se a cidade da lista é diferente
-      const hasInitialCityMatch = initialCity && initialCity.id === value;
-      if (!hasInitialCityMatch) {
-        const foundCity = cities.find((city) => city.id === value);
-        if (foundCity) {
-          setSelectedCityData(foundCity);
-        }
-      }
-    } else if (!initialCity) {
-      setSelectedCityData(null);
-    }
-  }, [value, cities, initialCity]);
+  const selectedState = states.find((state) => state.id === value);
 
   // Fechar ao clicar fora
   useEffect(() => {
@@ -140,9 +94,6 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
     return () => listElement.removeEventListener("scroll", handleScroll);
   }, [isOpen, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Usar cidade da lista ou dados salvos
-  const selectedCity = cities.find((city) => city.id === value) || selectedCityData;
-
   return (
     <div ref={selectRef} className="relative">
       <button
@@ -155,11 +106,9 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
         )}
       >
         <span className={value ? "text-foreground" : "text-muted-foreground"}>
-          {selectedCity
-            ? selectedCity.state?.uf
-              ? `${selectedCity.name} - ${selectedCity.state.uf}`
-              : selectedCity.name
-            : "Selecione uma cidade"}
+          {selectedState
+            ? `${selectedState.name} - ${selectedState.uf}`
+            : "Selecione um estado"}
         </span>
         <ChevronDown
           className={cn(
@@ -175,7 +124,7 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
           <div className="border-b p-2">
             <input
               type="text"
-              placeholder="Buscar cidade..."
+              placeholder="Buscar estado..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -183,7 +132,7 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
             />
           </div>
 
-          {/* Lista de cidades */}
+          {/* Lista de estados */}
           <div
             ref={listRef}
             className="max-h-60 overflow-y-auto"
@@ -196,9 +145,9 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
                   Carregando...
                 </span>
               </div>
-            ) : cities.length === 0 ? (
+            ) : states.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                Nenhuma cidade encontrada
+                Nenhum estado encontrado
               </div>
             ) : (
               <>
@@ -213,22 +162,22 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
                     !value && "bg-accent text-accent-foreground"
                   )}
                 >
-                  Selecione uma cidade
+                  Selecione um estado
                 </button>
-                {cities.map((city: City) => (
+                {states.map((state: State) => (
                   <button
-                    key={city.id}
+                    key={state.id}
                     type="button"
                     onClick={() => {
-                      onChange(city.id);
+                      onChange(state.id);
                       setIsOpen(false);
                     }}
                     className={cn(
                       "w-full px-4 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
-                      value === city.id && "bg-accent text-accent-foreground"
+                      value === state.id && "bg-accent text-accent-foreground"
                     )}
                   >
-                    {city.name} - {city.state.uf}
+                    {state.name} - {state.uf}
                   </button>
                 ))}
                 {isFetchingNextPage && (

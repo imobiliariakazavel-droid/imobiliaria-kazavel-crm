@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   LogOut,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase-client";
@@ -27,6 +28,11 @@ const navItems: NavItem[] = [
     title: "Início",
     href: "/",
     icon: Home,
+  },
+  {
+    title: "Imóveis",
+    href: "/imoveis",
+    icon: Building2,
   },
   {
     title: "Configurações",
