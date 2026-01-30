@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, Search, MapPin, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, Search, MapPin, Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CitySelect } from "@/components/ui/city-select";
 import { getNeighborhoods, type Neighborhood } from "@/lib/api/neighborhoods";
 import { CreateNeighborhoodDialog } from "./components/CreateNeighborhoodDialog";
+import { EditNeighborhoodDialog } from "./components/EditNeighborhoodDialog";
+import { DeleteNeighborhoodDialog } from "./components/DeleteNeighborhoodDialog";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -19,6 +21,10 @@ export default function BairrosPage() {
   const [searchCityId, setSearchCityId] = useState<string>("");
   const [debouncedSearchName, setDebouncedSearchName] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedNeighborhood, setSelectedNeighborhood] =
+    useState<Neighborhood | null>(null);
 
   // Debounce para pesquisa por nome
   useEffect(() => {
@@ -66,6 +72,16 @@ export default function BairrosPage() {
     setSearchName("");
     setSearchCityId("");
     setPage(1);
+  };
+
+  const handleEditNeighborhood = (neighborhood: Neighborhood) => {
+    setSelectedNeighborhood(neighborhood);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteNeighborhood = (neighborhood: Neighborhood) => {
+    setSelectedNeighborhood(neighborhood);
+    setIsDeleteDialogOpen(true);
   };
 
   return (
@@ -167,6 +183,9 @@ export default function BairrosPage() {
                     <th className="px-6 py-3 text-left text-sm font-semibold">
                       Cidade
                     </th>
+                    <th className="px-6 py-3 text-right text-sm font-semibold">
+                      Ações
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -180,6 +199,28 @@ export default function BairrosPage() {
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         {neighborhood.city.name}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditNeighborhood(neighborhood)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Editar bairro</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteNeighborhood(neighborhood)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Excluir bairro</span>
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -230,6 +271,20 @@ export default function BairrosPage() {
       <CreateNeighborhoodDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
+      />
+
+      {/* Dialog de edição */}
+      <EditNeighborhoodDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        neighborhood={selectedNeighborhood}
+      />
+
+      {/* Dialog de exclusão */}
+      <DeleteNeighborhoodDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        neighborhood={selectedNeighborhood}
       />
     </div>
   );

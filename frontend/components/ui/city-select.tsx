@@ -11,14 +11,25 @@ interface CitySelectProps {
   onChange: (value: string) => void;
   id?: string;
   disabled?: boolean;
+  initialCity?: { id: string; name: string; state?: { uf: string } } | null;
 }
 
 const ITEMS_PER_PAGE = 50;
 
-export function CitySelect({ value, onChange, id, disabled }: CitySelectProps) {
+export function CitySelect({ value, onChange, id, disabled, initialCity }: CitySelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedCityData, setSelectedCityData] = useState<City | null>(
+    initialCity
+      ? {
+          id: initialCity.id,
+          name: initialCity.name,
+          created_at: "",
+          state: initialCity.state || { id: "", name: "", uf: "" },
+        }
+      : null
+  );
   const selectRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +68,40 @@ export function CitySelect({ value, onChange, id, disabled }: CitySelectProps) {
   // Flatten das páginas
   const cities = data?.pages.flatMap((page) => page.data || []) || [];
 
+  // Atualizar cidade selecionada quando initialCity mudar
+  useEffect(() => {
+    if (initialCity) {
+      // Se o value corresponde ao initialCity, ou se o value está vazio mas temos initialCity
+      if (initialCity.id === value || (value === "" && initialCity.id)) {
+        setSelectedCityData({
+          id: initialCity.id,
+          name: initialCity.name,
+          created_at: "",
+          state: initialCity.state || { id: "", name: "", uf: "" },
+        });
+      }
+    } else if (!value) {
+      // Se não há initialCity e não há value, limpar
+      setSelectedCityData(null);
+    }
+  }, [initialCity, value]);
+
+  // Atualizar cidade selecionada quando encontrar na lista (só se não tiver initialCity correspondente)
+  useEffect(() => {
+    if (value) {
+      // Só atualizar da lista se não temos initialCity correspondente ou se a cidade da lista é diferente
+      const hasInitialCityMatch = initialCity && initialCity.id === value;
+      if (!hasInitialCityMatch) {
+        const foundCity = cities.find((city) => city.id === value);
+        if (foundCity) {
+          setSelectedCityData(foundCity);
+        }
+      }
+    } else if (!initialCity) {
+      setSelectedCityData(null);
+    }
+  }, [value, cities, initialCity]);
+
   // Fechar ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -92,7 +137,8 @@ export function CitySelect({ value, onChange, id, disabled }: CitySelectProps) {
     return () => listElement.removeEventListener("scroll", handleScroll);
   }, [isOpen, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const selectedCity = cities.find((city) => city.id === value);
+  // Usar cidade da lista ou dados salvos
+  const selectedCity = cities.find((city) => city.id === value) || selectedCityData;
 
   return (
     <div ref={selectRef} className="relative">
@@ -107,7 +153,9 @@ export function CitySelect({ value, onChange, id, disabled }: CitySelectProps) {
       >
         <span className={value ? "text-foreground" : "text-muted-foreground"}>
           {selectedCity
-            ? `${selectedCity.name} - ${selectedCity.state.uf}`
+            ? selectedCity.state?.uf
+              ? `${selectedCity.name} - ${selectedCity.state.uf}`
+              : selectedCity.name
             : "Todas as cidades"}
         </span>
         <ChevronDown

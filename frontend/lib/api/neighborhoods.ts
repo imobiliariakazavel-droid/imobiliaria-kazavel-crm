@@ -55,6 +55,32 @@ export async function getNeighborhoods(
   return data as GetNeighborhoodsResponse;
 }
 
+export interface GetNeighborhoodResponse {
+  status: boolean;
+  message: string;
+  data: Neighborhood | null;
+}
+
+export async function getNeighborhood(
+  id: string
+): Promise<GetNeighborhoodResponse> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc("get_neighborhood", {
+    p_id: id,
+  });
+
+  if (error) {
+    return {
+      status: false,
+      message: error.message || "Erro ao buscar bairro",
+      data: null,
+    };
+  }
+
+  return data as GetNeighborhoodResponse;
+}
+
 export interface CreateNeighborhoodParams {
   name: string;
   cityId: string;
@@ -91,4 +117,70 @@ export async function createNeighborhood(
   }
 
   return data as CreateNeighborhoodResponse;
+}
+
+export interface UpdateNeighborhoodParams {
+  id: string;
+  name?: string;
+  cityId?: string;
+}
+
+export interface UpdateNeighborhoodResponse {
+  status: boolean;
+  message: string;
+  data: {
+    id: string;
+    name: string;
+    city_id: string;
+    created_at: string;
+    is_deleted: boolean;
+  } | null;
+}
+
+export async function updateNeighborhood(
+  params: UpdateNeighborhoodParams
+): Promise<UpdateNeighborhoodResponse> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc("patch_neighborhoods", {
+    p_id: params.id,
+    p_name: params.name || null,
+    p_city_id: params.cityId || null,
+  });
+
+  if (error) {
+    return {
+      status: false,
+      message: error.message || "Erro ao atualizar bairro",
+      data: null,
+    };
+  }
+
+  return data as UpdateNeighborhoodResponse;
+}
+
+export interface DeleteNeighborhoodResponse {
+  status: boolean;
+  message: string;
+  data: null;
+}
+
+export async function deleteNeighborhood(
+  id: string
+): Promise<DeleteNeighborhoodResponse> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc("delete_neighborhoods", {
+    p_id: id,
+  });
+
+  if (error) {
+    return {
+      status: false,
+      message: error.message || "Erro ao excluir bairro",
+      data: null,
+    };
+  }
+
+  return data as DeleteNeighborhoodResponse;
 }
