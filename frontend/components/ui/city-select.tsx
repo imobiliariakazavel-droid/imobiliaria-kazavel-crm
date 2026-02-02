@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getCities, type City } from "@/lib/api/cities";
+import { getCities, type City, type State } from "@/lib/api/cities";
 import { cn } from "@/lib/utils";
 import { Loader2, ChevronDown } from "lucide-react";
 
@@ -12,26 +12,32 @@ interface CitySelectProps {
   id?: string;
   disabled?: boolean;
   stateId?: string;
-  initialCity?: { id: string; name: string; state?: { uf: string } } | null;
+  initialCity?: { id: string; name: string; state?: { uf: string } | State } | null;
 }
 
 const ITEMS_PER_PAGE = 50;
+
+// Função auxiliar para converter initialCity em City
+function createCityFromInitial(initialCity: { id: string; name: string; state?: { uf: string } | State }): City {
+  const state: State = 
+    initialCity.state && "id" in initialCity.state && "name" in initialCity.state
+      ? initialCity.state as State
+      : { id: "", name: "", uf: initialCity.state?.uf || "" };
+  
+  return {
+    id: initialCity.id,
+    name: initialCity.name,
+    created_at: "",
+    state,
+  };
+}
 
 export function CitySelect({ value, onChange, id, disabled, stateId, initialCity }: CitySelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCityData, setSelectedCityData] = useState<City | null>(
-    initialCity
-      ? {
-          id: initialCity.id,
-          name: initialCity.name,
-          created_at: "",
-          state: initialCity.state && "id" in initialCity.state && "name" in initialCity.state
-            ? initialCity.state
-            : { id: "", name: "", uf: initialCity.state?.uf || "" },
-        }
-      : null
+    initialCity ? createCityFromInitial(initialCity) : null
   );
   const selectRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -78,14 +84,7 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
     if (initialCity) {
       // Se o value corresponde ao initialCity, ou se o value está vazio mas temos initialCity
       if (initialCity.id === value || (value === "" && initialCity.id)) {
-        setSelectedCityData({
-          id: initialCity.id,
-          name: initialCity.name,
-          created_at: "",
-          state: initialCity.state && "id" in initialCity.state && "name" in initialCity.state
-            ? initialCity.state
-            : { id: "", name: "", uf: initialCity.state?.uf || "" },
-        });
+        setSelectedCityData(createCityFromInitial(initialCity));
       }
     } else if (!value) {
       // Se não há initialCity e não há value, limpar
