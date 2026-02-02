@@ -55,3 +55,71 @@ Para build de produção:
 ```bash
 npm run build
 ```
+
+## Deploy na Vercel
+
+O projeto está configurado para deploy na Vercel. Siga os passos abaixo:
+
+### 1. Preparação
+
+1. Certifique-se de que o projeto está no GitHub, GitLab ou Bitbucket
+2. Faça login na [Vercel](https://vercel.com)
+
+### 2. Deploy
+
+#### Opção A: Deploy via Dashboard da Vercel
+
+1. Acesse o [Dashboard da Vercel](https://vercel.com/dashboard)
+2. Clique em "Add New Project"
+3. Importe o repositório do GitHub/GitLab/Bitbucket
+4. A Vercel detectará automaticamente que é um projeto Next.js
+5. Configure as seguintes opções:
+   - **Framework Preset**: Next.js
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build` (será executado dentro do diretório frontend)
+   - **Output Directory**: `.next` (padrão do Next.js)
+   - **Install Command**: `npm install`
+
+#### Opção B: Deploy via CLI
+
+1. Instale a CLI da Vercel:
+```bash
+npm i -g vercel
+```
+
+2. No diretório raiz do projeto, execute:
+```bash
+vercel
+```
+
+3. Siga as instruções do CLI
+
+### 3. Configurar Variáveis de Ambiente
+
+Após o primeiro deploy, configure as variáveis de ambiente na Vercel:
+
+1. Acesse o projeto no Dashboard da Vercel
+2. Vá em **Settings** > **Environment Variables**
+3. Adicione as seguintes variáveis:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+4. Selecione os ambientes (Production, Preview, Development)
+5. Clique em **Save**
+6. Faça um novo deploy para aplicar as variáveis
+
+### 4. Domínio Personalizado (Opcional)
+
+1. Vá em **Settings** > **Domains**
+2. Adicione seu domínio personalizado
+3. Siga as instruções para configurar o DNS
+
+### Notas Importantes
+
+- O arquivo `vercel.json` já está configurado para apontar o root directory para `frontend`
+- O backend Express não é necessário para o deploy, pois o frontend usa o Supabase diretamente
+- Certifique-se de que todas as variáveis de ambiente estão configuradas antes do deploy
+- A Vercel fará o build automaticamente a cada push na branch principal
