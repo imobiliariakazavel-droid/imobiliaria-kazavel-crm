@@ -119,7 +119,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ### Notas Importantes
 
-- O arquivo `vercel.json` já está configurado para apontar o root directory para `frontend`
+- **IMPORTANTE**: Configure o **Root Directory** como `frontend` nas configurações do projeto no Dashboard da Vercel (Settings > General > Root Directory)
+- O arquivo `vercel.json` está configurado com os comandos de build
 - O backend Express não é necessário para o deploy, pois o frontend usa o Supabase diretamente
 - Certifique-se de que todas as variáveis de ambiente estão configuradas antes do deploy
 - A Vercel fará o build automaticamente a cada push na branch principal

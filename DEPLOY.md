@@ -53,10 +53,10 @@ imobiliaria-kazavel-crm/
 
 ## Notas Importantes
 
+- **IMPORTANTE**: Configure o **Root Directory** como `frontend` nas configurações do projeto no Dashboard da Vercel (Settings > General > Root Directory). Isso NÃO deve estar no `vercel.json`
 - O backend Express não é necessário para o deploy, pois o frontend usa Supabase diretamente
 - A Vercel fará build automático a cada push na branch principal
 - Certifique-se de configurar as variáveis de ambiente antes do primeiro deploy
-- O projeto está configurado para usar o diretório `frontend` como root
 
 ## Troubleshooting
 
