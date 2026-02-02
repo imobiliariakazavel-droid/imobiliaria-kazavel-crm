@@ -27,7 +27,9 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
           id: initialCity.id,
           name: initialCity.name,
           created_at: "",
-          state: initialCity.state || { id: "", name: "", uf: "" },
+          state: initialCity.state && "id" in initialCity.state && "name" in initialCity.state
+            ? initialCity.state
+            : { id: "", name: "", uf: initialCity.state?.uf || "" },
         }
       : null
   );
@@ -80,7 +82,9 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
           id: initialCity.id,
           name: initialCity.name,
           created_at: "",
-          state: initialCity.state || { id: "", name: "", uf: "" },
+          state: initialCity.state && "id" in initialCity.state && "name" in initialCity.state
+            ? initialCity.state
+            : { id: "", name: "", uf: initialCity.state?.uf || "" },
         });
       }
     } else if (!value) {
