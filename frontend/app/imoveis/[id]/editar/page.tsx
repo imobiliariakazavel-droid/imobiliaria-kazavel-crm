@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  createProperty,
+  updateProperty,
+  getProperty,
   type PropertyType,
   type PropertyNegotiation,
   type PropertyStatus,
@@ -24,9 +25,18 @@ import { Loader2, Plus, X, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadImage } from "@/lib/storage";
 
-export default function CreatePropertyPage() {
+export default function EditPropertyPage() {
+  const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const propertyId = params.id as string;
   const [error, setError] = useState<string | null>(null);
+
+  // Buscar dados do imóvel
+  const { data: propertyData, isLoading: isLoadingProperty } = useQuery({
+    queryKey: ["property", propertyId],
+    queryFn: () => getProperty(propertyId),
+  });
 
   // Mapeamento de tipos de imóvel para exibição
   const propertyTypeLabels: Record<PropertyType, string> = {
@@ -89,17 +99,61 @@ export default function CreatePropertyPage() {
   const [newVideoUrl, setNewVideoUrl] = useState("");
   const [uploadingImages, setUploadingImages] = useState(false);
 
+  // Preencher formulário com dados do imóvel
+  useEffect(() => {
+    if (propertyData?.status && propertyData.data) {
+      const property = propertyData.data;
+      setType(property.type);
+      setCode(property.code);
+      setNegotiations(property.negotiations);
+      setTitle(property.title);
+      setDescription(property.description || "");
+      setStatus(property.status);
+      setCep(property.cep || "");
+      setStreet(property.street);
+      setStateId(property.state.id);
+      setCityId(property.city.id);
+      setNeighborhoodId(property.neighborhood.id);
+      setAddressNumber(property.address_number?.toString() || "");
+      setAddressComplement(property.address_complement || "");
+      setAddressReference(property.address_reference || "");
+      setSaleValue(property.sale_value?.toString() || "");
+      setLeaseValue(property.lease_value?.toString() || "");
+      setCondominiumValue(property.condominium_value?.toString() || "");
+      setIptuValue(property.iptu_value?.toString() || "");
+      setValueFireInsurance(property.value_fire_insurance?.toString() || "");
+      setFinancing(property.financing);
+      setAddressVisibility(property.address_visibility);
+      setVisibilityValues(property.visibility_values);
+      setAmenities(property.amenities || []);
+      setNumberBedrooms(property.number_bedrooms?.toString() || "");
+      setNumberSuites(property.number_suites?.toString() || "");
+      setNumberBathrooms(property.number_bathrooms?.toString() || "");
+      setNumberParkingSpaces(property.number_parking_spaces?.toString() || "");
+      setNumberRooms(property.number_rooms?.toString() || "");
+      setTotalArea(property.total_area.toString());
+      setPrivateArea(property.private_area.toString());
+      setUsefulArea(property.useful_area.toString());
+      setImages(property.images.map((img) => img.url));
+      setVideos(property.videos.map((video) => video.url));
+    }
+  }, [propertyData]);
+
   const mutation = useMutation({
-    mutationFn: createProperty,
+    mutationFn: updateProperty,
     onSuccess: (data) => {
       if (data.status) {
-        router.push("/imoveis");
+        // Invalidar cache do imóvel específico e da lista de imóveis
+        queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+        queryClient.invalidateQueries({ queryKey: ["properties"] });
+        // Redirecionar para a página de detalhes
+        router.push(`/imoveis/${propertyId}`);
       } else {
         setError(data.message);
       }
     },
     onError: (error: Error) => {
-      setError(error.message || "Erro ao criar imóvel");
+      setError(error.message || "Erro ao atualizar imóvel");
     },
   });
 
@@ -236,6 +290,7 @@ export default function CreatePropertyPage() {
     }
 
     mutation.mutate({
+      id: propertyId,
       type,
       code: code.trim(),
       negotiations,
@@ -278,12 +333,36 @@ export default function CreatePropertyPage() {
     });
   };
 
+  if (isLoadingProperty) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!propertyData?.status || !propertyData.data) {
+    return (
+      <div className="w-full space-y-6">
+        <div className="bg-destructive/10 text-destructive p-6 rounded-lg text-center">
+          <p className="font-semibold mb-2">Erro ao carregar imóvel</p>
+          <p className="text-sm">
+            {propertyData?.message || "Imóvel não encontrado ou erro ao buscar dados."}
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => router.back()}>
+          Voltar
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Criar Novo Imóvel</h1>
+        <h1 className="text-3xl font-bold">Editar Imóvel</h1>
         <p className="text-muted-foreground mt-2">
-          Preencha os dados do imóvel abaixo
+          Atualize os dados do imóvel abaixo
         </p>
       </div>
 
@@ -438,6 +517,17 @@ export default function CreatePropertyPage() {
                 }}
                 disabled={mutation.isPending}
                 stateId={stateId}
+                initialCity={
+                  propertyData?.status && propertyData.data
+                    ? {
+                        id: propertyData.data.city.id,
+                        name: propertyData.data.city.name,
+                        state: {
+                          uf: propertyData.data.state.uf,
+                        },
+                      }
+                    : null
+                }
               />
             </div>
 
@@ -838,7 +928,7 @@ export default function CreatePropertyPage() {
                   ) : (
                     <>
                       <Upload className="h-4 w-4 mr-2" />
-                      Selecionar Imagens
+                      Adicionar Imagens
                     </>
                   )}
                 </Button>
@@ -938,10 +1028,10 @@ export default function CreatePropertyPage() {
             {mutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Criando...
+                Atualizando...
               </>
             ) : (
-              "Criar Imóvel"
+              "Salvar Alterações"
             )}
           </Button>
         </div>

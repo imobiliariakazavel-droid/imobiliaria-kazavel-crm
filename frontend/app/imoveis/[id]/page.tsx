@@ -1,23 +1,56 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { getProperty } from "@/lib/api/properties";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getProperty, deleteProperty } from "@/lib/api/properties";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowLeft, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Loader2, ArrowLeft, Check, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function PropertyDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const propertyId = params.id as string;
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["property", propertyId],
     queryFn: () => getProperty(propertyId),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteProperty,
+    onSuccess: (data) => {
+      if (data.status) {
+        // Invalidar cache de propriedades
+        queryClient.invalidateQueries({ queryKey: ["properties"] });
+        queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+        // Redirecionar para lista de imóveis
+        router.push("/imoveis");
+      } else {
+        alert(data.message || "Erro ao excluir imóvel");
+      }
+    },
+    onError: (error: Error) => {
+      alert(error.message || "Erro ao excluir imóvel");
+    },
+  });
+
+  const handleDelete = () => {
+    deleteMutation.mutate(propertyId);
+    setShowDeleteDialog(false);
+  };
 
   const formatCurrency = (value: number | null) => {
     if (!value) return "Não informado";
@@ -56,6 +89,17 @@ export default function PropertyDetailPage() {
     elevator: "Elevador",
     pool: "Piscina",
     grill: "Churrasqueira",
+    kitchen: "Cozinha",
+    balcony: "Varanda",
+    laundry_room: "Área de Serviço",
+    home_office: "Escritório",
+    internet: "Internet",
+    interfone: "Interfone",
+    doorman: "Porteiro",
+    gourmet_area: "Área Gourmet",
+    terrace: "Terraço",
+    closet: "Closet",
+    built_in_furniture: "Mobília Planejada",
   };
 
   const statusLabels: Record<string, string> = {
@@ -73,7 +117,7 @@ export default function PropertyDetailPage() {
 
   if (error || !data?.status || !data.data) {
     return (
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         <Button
           variant="outline"
           onClick={() => router.back()}
@@ -95,7 +139,7 @@ export default function PropertyDetailPage() {
   const property = data.data;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Detalhes do Imóvel</h1>
@@ -111,6 +155,14 @@ export default function PropertyDetailPage() {
           <Link href={`/imoveis/${propertyId}/editar`}>
             <Button variant="outline">Editar</Button>
           </Link>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Excluir
+          </Button>
         </div>
       </div>
 
@@ -524,6 +576,48 @@ export default function PropertyDetailPage() {
           </div>
         </section>
       </div>
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogClose onClose={() => setShowDeleteDialog(false)} />
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir o imóvel <strong>{property.title}</strong>?
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={deleteMutation.isPending}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Excluindo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

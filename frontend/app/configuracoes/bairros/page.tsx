@@ -85,7 +85,7 @@ export default function BairrosPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">

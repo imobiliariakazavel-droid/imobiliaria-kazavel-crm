@@ -10,7 +10,18 @@ export type PropertyAmenity =
   | "air_conditioning" 
   | "elevator" 
   | "pool" 
-  | "grill";
+  | "grill"
+  | "kitchen"
+  | "balcony"
+  | "laundry_room"
+  | "home_office"
+  | "internet"
+  | "interfone"
+  | "doorman"
+  | "gourmet_area"
+  | "terrace"
+  | "closet"
+  | "built_in_furniture";
 
 export interface CreatePropertyParams {
   type: PropertyType;
@@ -49,6 +60,49 @@ export interface CreatePropertyParams {
 }
 
 export interface CreatePropertyResponse {
+  status: boolean;
+  message: string;
+  data: any | null;
+}
+
+export interface UpdatePropertyParams {
+  id: string;
+  type?: PropertyType;
+  code?: string;
+  negotiations?: PropertyNegotiation[];
+  cep?: string;
+  street?: string;
+  stateId?: string;
+  cityId?: string;
+  neighborhoodId?: string;
+  addressNumber?: number;
+  addressComplement?: string;
+  addressReference?: string;
+  saleValue?: number;
+  leaseValue?: number;
+  condominiumValue?: number;
+  iptuValue?: number;
+  valueFireInsurance?: number;
+  financing?: boolean;
+  addressVisibility?: AddressVisibility;
+  visibilityValues?: VisibilityValue[];
+  amenities?: PropertyAmenity[];
+  numberBedrooms?: number;
+  numberSuites?: number;
+  numberBathrooms?: number;
+  numberParkingSpaces?: number;
+  numberRooms?: number;
+  totalArea?: number;
+  privateArea?: number;
+  usefulArea?: number;
+  title?: string;
+  description?: string;
+  status?: PropertyStatus;
+  videos?: string[];
+  images?: string[];
+}
+
+export interface UpdatePropertyResponse {
   status: boolean;
   message: string;
   data: any | null;
@@ -281,4 +335,113 @@ export async function getProperty(id: string): Promise<GetPropertyResponse> {
   }
 
   return data as GetPropertyResponse;
+}
+
+export async function updateProperty(
+  params: UpdatePropertyParams
+): Promise<UpdatePropertyResponse> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc("patch_properties", {
+    p_id: params.id,
+    p_type: params.type || null,
+    p_code: params.code || null,
+    p_negotiations: params.negotiations || null,
+    p_cep: params.cep || null,
+    p_street: params.street || null,
+    p_state_id: params.stateId || null,
+    p_city_id: params.cityId || null,
+    p_neighborhood_id: params.neighborhoodId || null,
+    p_address_number: params.addressNumber !== undefined ? params.addressNumber : null,
+    p_address_complement: params.addressComplement || null,
+    p_address_reference: params.addressReference || null,
+    p_sale_value: params.saleValue !== undefined ? params.saleValue : null,
+    p_lease_value: params.leaseValue !== undefined ? params.leaseValue : null,
+    p_condominium_value: params.condominiumValue !== undefined ? params.condominiumValue : null,
+    p_iptu_value: params.iptuValue !== undefined ? params.iptuValue : null,
+    p_value_fire_insurance: params.valueFireInsurance !== undefined ? params.valueFireInsurance : null,
+    p_financing: params.financing !== undefined ? params.financing : null,
+    p_address_visibility: params.addressVisibility || null,
+    p_visibility_values: params.visibilityValues || null,
+    p_amenities: params.amenities || null,
+    p_number_bedrooms: params.numberBedrooms !== undefined ? params.numberBedrooms : null,
+    p_number_suites: params.numberSuites !== undefined ? params.numberSuites : null,
+    p_number_bathrooms: params.numberBathrooms !== undefined ? params.numberBathrooms : null,
+    p_number_parking_spaces: params.numberParkingSpaces !== undefined ? params.numberParkingSpaces : null,
+    p_number_rooms: params.numberRooms !== undefined ? params.numberRooms : null,
+    p_total_area: params.totalArea !== undefined ? params.totalArea : null,
+    p_private_area: params.privateArea !== undefined ? params.privateArea : null,
+    p_useful_area: params.usefulArea !== undefined ? params.usefulArea : null,
+    p_title: params.title || null,
+    p_description: params.description || null,
+    p_status: params.status || null,
+    p_videos: params.videos || null,
+    p_images: params.images || null,
+  });
+
+  if (error) {
+    return {
+      status: false,
+      message: error.message || "Erro ao atualizar imóvel",
+      data: null,
+    };
+  }
+
+  return data as UpdatePropertyResponse;
+}
+
+export interface DeletePropertyResponse {
+  status: boolean;
+  message: string;
+  data: null;
+}
+
+export async function deleteProperty(
+  id: string
+): Promise<DeletePropertyResponse> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc("delete_properties", {
+    p_id: id,
+  });
+
+  if (error) {
+    return {
+      status: false,
+      message: error.message || "Erro ao excluir imóvel",
+      data: null,
+    };
+  }
+
+  return data as DeletePropertyResponse;
+}
+
+// Tipos para dashboard
+export interface DashboardData {
+  total_properties: number;
+  active_properties: number;
+  inactive_properties: number;
+  total_neighborhoods: number;
+}
+
+export interface DashboardResponse {
+  status: boolean;
+  message: string;
+  data: DashboardData | null;
+}
+
+export async function getDashboardHome(): Promise<DashboardResponse> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc("get_dashboard_home");
+
+  if (error) {
+    return {
+      status: false,
+      message: error.message || "Erro ao buscar dados do dashboard",
+      data: null,
+    };
+  }
+
+  return data as DashboardResponse;
 }
