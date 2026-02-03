@@ -133,6 +133,7 @@ export interface PropertyMainImage {
 export interface Property {
   id: string;
   title: string;
+  status: PropertyStatus;
   negotiations: PropertyNegotiation[];
   sale_value: number | null;
   lease_value: number | null;
@@ -162,6 +163,7 @@ export interface GetPropertiesParams {
   neighborhoodsId?: string[];
   sortMostRecent?: boolean;
   negotiations?: PropertyNegotiation[];
+  status?: PropertyStatus;
 }
 
 export async function createProperty(
@@ -232,6 +234,7 @@ export async function getProperties(
     p_negotiations: params.negotiations && params.negotiations.length > 0
       ? params.negotiations
       : null,
+    p_status: params.status || 'active',
   });
 
   if (error) {
