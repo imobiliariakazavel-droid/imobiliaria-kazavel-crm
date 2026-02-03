@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createProperty,
   updateProperty,
@@ -28,6 +28,7 @@ import Image from "next/image";
 
 export default function CreatePropertyPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
   // Mapeamento de tipos de imóvel para exibição
@@ -128,7 +129,11 @@ export default function CreatePropertyPage() {
           }
         }
         
+        // Invalidar cache da lista de imóveis para atualizar a página
+        await queryClient.invalidateQueries({ queryKey: ["properties"] });
+        
         router.push("/imoveis");
+        router.refresh();
       } else {
         setError(data.message);
       }
