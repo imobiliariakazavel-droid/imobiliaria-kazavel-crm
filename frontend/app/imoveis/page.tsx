@@ -7,6 +7,7 @@ import {
   getProperties,
   type PropertyNegotiation,
   type Property,
+  type PropertyStatus,
 } from "@/lib/api/properties";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,8 @@ export default function PropertiesPage() {
   const [neighborhoodsId, setNeighborhoodsId] = useState<string[]>([]);
   const [sortMostRecent, setSortMostRecent] = useState(true);
   const [negotiations, setNegotiations] = useState<PropertyNegotiation[]>([]);
+  const [status, setStatus] = useState<PropertyStatus[]>(["active"]);
+  const [code, setCode] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
   // Buscar bairros da cidade selecionada para mapear IDs para nomes
@@ -62,6 +65,8 @@ export default function PropertiesPage() {
       neighborhoodsId,
       sortMostRecent,
       negotiations,
+      status,
+      code,
     ],
     queryFn: () =>
       getProperties({
@@ -71,6 +76,8 @@ export default function PropertiesPage() {
         neighborhoodsId: neighborhoodsId.length > 0 ? neighborhoodsId : undefined,
         sortMostRecent,
         negotiations: negotiations.length > 0 ? negotiations : undefined,
+        status: status.length === 2 ? undefined : status.length > 0 ? status : undefined,
+        code: code.trim() || undefined,
       }),
   });
 
@@ -92,11 +99,24 @@ export default function PropertiesPage() {
     setPage(1);
   };
 
+  const handleStatusToggle = (statusValue: PropertyStatus) => {
+    setStatus((prev) => {
+      const newStatus = prev.includes(statusValue)
+        ? prev.filter((s) => s !== statusValue)
+        : [...prev, statusValue];
+      // Garantir que sempre tenha pelo menos um status selecionado
+      return newStatus.length > 0 ? newStatus : ["active"];
+    });
+    setPage(1);
+  };
+
   const handleClearFilters = () => {
     setCityId("");
     setNeighborhoodsId([]);
     setSortMostRecent(true);
     setNegotiations([]);
+    setStatus(["active"]);
+    setCode("");
     setPage(1);
   };
 
@@ -112,7 +132,10 @@ export default function PropertiesPage() {
     cityId ||
     neighborhoodsId.length > 0 ||
     negotiations.length > 0 ||
-    !sortMostRecent;
+    !sortMostRecent ||
+    (status.length === 1 && status[0] !== "active") ||
+    status.length === 0 ||
+    code.trim().length > 0;
 
   return (
     <div className="w-full space-y-6">
@@ -138,6 +161,8 @@ export default function PropertiesPage() {
                   neighborhoodsId.length,
                   negotiations.length,
                   !sortMostRecent && 1,
+                  ((status.length === 1 && status[0] !== "active") || status.length === 0) && 1,
+                  code.trim().length > 0 && 1,
                 ]
                   .filter(Boolean)
                   .reduce((a, b) => (a || 0) + (b || 0), 0)}
@@ -180,7 +205,40 @@ export default function PropertiesPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="filter-code">Código</Label>
+              <Input
+                id="filter-code"
+                placeholder="Ex: APT-001"
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <div className="flex flex-wrap gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={status.includes("active")}
+                    onChange={() => handleStatusToggle("active")}
+                  />
+                  <span className="text-sm">Ativo</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={status.includes("inactive")}
+                    onChange={() => handleStatusToggle("inactive")}
+                  />
+                  <span className="text-sm">Inativo</span>
+                </label>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="filter-city">Cidade</Label>
               <CitySelect
@@ -312,9 +370,27 @@ export default function PropertiesPage() {
                   )}
                 </div>
                 <div className="p-4 space-y-2">
-                  <h3 className="font-semibold text-lg line-clamp-2">
-                    {property.title}
-                  </h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {property.code}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-lg line-clamp-2">
+                        {property.title}
+                      </h3>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+                        property.status === "active"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                          : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                      }`}
+                    >
+                      {property.status === "active" ? "Ativo" : "Inativo"}
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {property.neighborhood.name}, {property.city.name} - {property.state.uf}
                   </p>
