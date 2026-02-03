@@ -23,7 +23,8 @@ import { CitySelect } from "@/components/ui/city-select";
 import { NeighborhoodSelect } from "@/components/ui/neighborhood-select";
 import { Loader2, Plus, X, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadImage } from "@/lib/storage";
+import { uploadImage, moveImagesFromTemp } from "@/lib/storage";
+import Image from "next/image";
 
 export default function EditPropertyPage() {
   const params = useParams();
@@ -141,8 +142,20 @@ export default function EditPropertyPage() {
 
   const mutation = useMutation({
     mutationFn: updateProperty,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data.status) {
+        // Verificar se há imagens em temp/ e movê-las para a pasta do imóvel
+        const imagesInTemp = images.filter((url) => url.includes("/temp/"));
+        if (imagesInTemp.length > 0) {
+          try {
+            await moveImagesFromTemp(imagesInTemp, propertyId);
+            console.log("Imagens movidas de temp/ para a pasta do imóvel");
+          } catch (error) {
+            console.error("Erro ao mover imagens:", error);
+            // Continuar mesmo se houver erro ao mover imagens
+          }
+        }
+
         // Invalidar cache do imóvel específico e da lista de imóveis
         queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
         queryClient.invalidateQueries({ queryKey: ["properties"] });
@@ -200,7 +213,7 @@ export default function EditPropertyPage() {
           throw new Error(`${file.name} é muito grande. Máximo: 5MB`);
         }
 
-        return uploadImage(file);
+        return uploadImage(file, propertyId);
       });
 
       const uploadedUrls = await Promise.all(uploadPromises);
@@ -940,9 +953,11 @@ export default function EditPropertyPage() {
                       key={index}
                       className="relative group border rounded-lg overflow-hidden"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt={`Imagem ${index + 1}`}
+                        width={400}
+                        height={128}
                         className="w-full h-32 object-cover"
                       />
                       <Button

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import {
   Home,
@@ -12,10 +13,13 @@ import {
   X,
   LogOut,
   Building2,
+  Users,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
+import { getCurrentUser } from "@/lib/api/users";
 
 interface NavItem {
   title: string;
@@ -35,11 +39,61 @@ const navItems: NavItem[] = [
     icon: Building2,
   },
   {
+    title: "Usuários",
+    href: "/usuarios",
+    icon: Users,
+  },
+  {
     title: "Configurações",
     href: "/configuracoes",
     icon: Settings,
   },
 ];
+
+function UserInfoSection() {
+  const { data: userData, isLoading } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: getCurrentUser,
+  });
+
+  const user = userData?.data;
+
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = {
+      admin: "Administrador",
+      standard: "Padrão",
+    };
+    return labels[role] || role;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center justify-center py-2">
+          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="p-4 border-t border-gray-200">
+      <div className="p-3 bg-gray-50 rounded-lg">
+        <p className="text-sm font-semibold text-black truncate">
+          {user.full_name}
+        </p>
+        <p className="text-xs text-gray-600 truncate">{user.email}</p>
+        <p className="text-xs text-gray-500 mt-1">
+          {getRoleLabel(user.role)}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function LogoutButtonSidebar() {
   const [loading, setLoading] = useState(false);
@@ -80,12 +134,30 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
+  // Buscar dados do usuário atual para verificar o role
+  const { data: userData } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: getCurrentUser,
+  });
+
+  const userRole = userData?.data?.role;
+
   const isActive = (href: string) => {
     if (href === "/") {
       return pathname === "/";
     }
     return pathname.startsWith(href);
   };
+
+  // Filtrar itens de navegação baseado no role
+  const filteredNavItems = navItems.filter((item) => {
+    // Se for usuário padrão, esconder apenas "Usuários"
+    if (userRole === "standard") {
+      return item.href !== "/usuarios";
+    }
+    // Admin vê todos os itens
+    return true;
+  });
 
   return (
     <>
@@ -140,7 +212,7 @@ export function Sidebar() {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">
             <ul className="space-y-2">
-              {navItems.map((item) => (
+              {filteredNavItems.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
@@ -159,6 +231,9 @@ export function Sidebar() {
               ))}
             </ul>
           </nav>
+
+          {/* Informações do usuário */}
+          <UserInfoSection />
 
           {/* Footer com logout */}
           <div className="p-4 border-t border-gray-200">

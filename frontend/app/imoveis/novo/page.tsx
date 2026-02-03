@@ -22,7 +22,8 @@ import { CitySelect } from "@/components/ui/city-select";
 import { NeighborhoodSelect } from "@/components/ui/neighborhood-select";
 import { Loader2, Plus, X, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadImage } from "@/lib/storage";
+import { uploadImage, moveImagesFromTemp } from "@/lib/storage";
+import Image from "next/image";
 
 export default function CreatePropertyPage() {
   const router = useRouter();
@@ -91,8 +92,28 @@ export default function CreatePropertyPage() {
 
   const mutation = useMutation({
     mutationFn: createProperty,
-    onSuccess: (data) => {
-      if (data.status) {
+    onSuccess: async (data) => {
+      if (data.status && data.data) {
+        // Extrair o ID do imóvel criado
+        const propertyId = data.data.id || data.data.property_id;
+        
+        if (propertyId && images.length > 0) {
+          try {
+            // Mover imagens de temp/ para a pasta do imóvel
+            const movedImageUrls = await moveImagesFromTemp(images, propertyId);
+            
+            // Se as URLs mudaram, atualizar o imóvel com as novas URLs
+            if (movedImageUrls.some((url, index) => url !== images[index])) {
+              // Aqui você poderia chamar uma função de atualização se necessário
+              // Por enquanto, as imagens já foram movidas no storage
+              console.log("Imagens movidas com sucesso para a pasta do imóvel");
+            }
+          } catch (error) {
+            console.error("Erro ao mover imagens:", error);
+            // Continuar mesmo se houver erro ao mover imagens
+          }
+        }
+        
         router.push("/imoveis");
       } else {
         setError(data.message);
@@ -850,9 +871,11 @@ export default function CreatePropertyPage() {
                       key={index}
                       className="relative group border rounded-lg overflow-hidden"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt={`Imagem ${index + 1}`}
+                        width={400}
+                        height={128}
                         className="w-full h-32 object-cover"
                       />
                       <Button

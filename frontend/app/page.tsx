@@ -2,13 +2,23 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardHome } from "@/lib/api/properties";
-import { Loader2, Home as HomeIcon, CheckCircle, XCircle, MapPin } from "lucide-react";
+import { getCurrentUser } from "@/lib/api/users";
+import { Loader2, Home as HomeIcon, CheckCircle, XCircle, MapPin, Users } from "lucide-react";
 
 export default function Home() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard"],
     queryFn: getDashboardHome,
   });
+
+  // Buscar role do usuário atual
+  const { data: userData } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: getCurrentUser,
+  });
+
+  const userRole = userData?.data?.role;
+  const isAdmin = userRole === "admin";
 
   if (isLoading) {
     return (
@@ -66,6 +76,19 @@ export default function Home() {
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200",
     },
+    // Card de usuários apenas para administradores
+    ...(isAdmin
+      ? [
+          {
+            title: "Usuários Ativos",
+            value: dashboard.total_users,
+            icon: Users,
+            color: "text-indigo-600",
+            bgColor: "bg-indigo-50",
+            borderColor: "border-indigo-200",
+          },
+        ]
+      : []),
   ];
 
   return (

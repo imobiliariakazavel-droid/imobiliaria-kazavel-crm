@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase-client";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,18 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Verificar se há erro na URL (redirecionamento do middleware)
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "inactive") {
+      setError("Sua conta está inativa. Entre em contato com o administrador.");
+      // Limpar o parâmetro da URL
+      router.replace("/login");
+    }
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +47,29 @@ export function LoginForm() {
       }
 
       if (data.user) {
+        // Verificar se o usuário está ativo
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("is_active")
+          .eq("id", data.user.id)
+          .single();
+
+        if (userError || !userData) {
+          // Se não encontrar o usuário, fazer logout
+          await supabase.auth.signOut();
+          setError("Erro ao verificar status do usuário");
+          setLoading(false);
+          return;
+        }
+
+        // Se o usuário estiver inativo, fazer logout e mostrar erro
+        if (!userData.is_active) {
+          await supabase.auth.signOut();
+          setError("Sua conta está inativa. Entre em contato com o administrador.");
+          setLoading(false);
+          return;
+        }
+
         router.push("/");
         router.refresh();
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { getCities, type City, type State } from "@/lib/api/cities";
 import { cn } from "@/lib/utils";
@@ -76,8 +76,11 @@ export function CitySelect({ value, onChange, id, disabled, stateId, initialCity
     // Buscar mesmo sem stateId (busca todas as cidades)
   });
 
-  // Flatten das páginas
-  const cities = data?.pages.flatMap((page) => page.data || []) || [];
+  // Flatten das páginas - memoizado para evitar recálculos desnecessários
+  const cities = useMemo(
+    () => data?.pages.flatMap((page) => page.data || []) || [],
+    [data?.pages]
+  );
 
   // Atualizar cidade selecionada quando initialCity mudar
   useEffect(() => {

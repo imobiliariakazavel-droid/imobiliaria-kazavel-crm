@@ -422,6 +422,7 @@ export interface DashboardData {
   active_properties: number;
   inactive_properties: number;
   total_neighborhoods: number;
+  total_users: number;
 }
 
 export interface DashboardResponse {

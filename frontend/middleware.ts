@@ -83,6 +83,48 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
+  // Rotas que requerem role admin
+  const adminOnlyRoutes = ['/usuarios']
+  const adminOnlySubRoutes = ['/configuracoes/bairros'] // Sub-rotas de configurações que requerem admin
+  const isAdminOnlyRoute = adminOnlyRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  )
+  const isAdminOnlySubRoute = adminOnlySubRoutes.some(route =>
+    request.nextUrl.pathname.startsWith(route)
+  )
+
+  // Verificar se o usuário está ativo (para todas as rotas protegidas)
+  if (user && !isPublicRoute) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_active, role')
+      .eq('id', user.id)
+      .single()
+
+    // Se o usuário não existir ou estiver inativo, fazer logout e redirecionar para login
+    if (!userData || !userData.is_active) {
+      // Limpar sessão usando o método do Supabase
+      await supabase.auth.signOut()
+      
+      // Criar resposta de redirecionamento para login com mensagem
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('error', 'inactive')
+      const redirectResponse = NextResponse.redirect(loginUrl)
+      
+      return redirectResponse
+    }
+
+    // Se a rota requer admin, verificar o role do usuário
+    if (isAdminOnlyRoute && userData.role !== 'admin') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // Se a sub-rota requer admin, verificar o role do usuário
+    if (isAdminOnlySubRoute && userData.role !== 'admin') {
+      return NextResponse.redirect(new URL('/configuracoes', request.url))
+    }
+  }
+
   return response
 }
 
