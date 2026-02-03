@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import {
   createProperty,
+  updateProperty,
   type PropertyType,
   type PropertyNegotiation,
   type PropertyStatus,
@@ -49,7 +50,7 @@ export default function CreatePropertyPage() {
   // Localização
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
-  const [stateId, setStateId] = useState("");
+  const [stateId, setStateId] = useState("02a7aa25-a02d-47df-8e52-7848ddbf218a");
   const [cityId, setCityId] = useState("");
   const [neighborhoodId, setNeighborhoodId] = useState("");
   const [addressNumber, setAddressNumber] = useState("");
@@ -99,14 +100,27 @@ export default function CreatePropertyPage() {
         
         if (propertyId && images.length > 0) {
           try {
-            // Mover imagens de temp/ para a pasta do imóvel
-            const movedImageUrls = await moveImagesFromTemp(images, propertyId);
+            // Verificar se há imagens em temp/
+            const imagesInTemp = images.filter((url) => url.includes("/temp/"));
             
-            // Se as URLs mudaram, atualizar o imóvel com as novas URLs
-            if (movedImageUrls.some((url, index) => url !== images[index])) {
-              // Aqui você poderia chamar uma função de atualização se necessário
-              // Por enquanto, as imagens já foram movidas no storage
-              console.log("Imagens movidas com sucesso para a pasta do imóvel");
+            if (imagesInTemp.length > 0) {
+              // Mover imagens de temp/ para a pasta do imóvel
+              const movedImageUrls = await moveImagesFromTemp(imagesInTemp, propertyId);
+              
+              // Atualizar as URLs no array de imagens
+              const updatedImages = images.map((url) => {
+                const index = imagesInTemp.indexOf(url);
+                if (index !== -1) {
+                  return movedImageUrls[index];
+                }
+                return url;
+              });
+              
+              // Atualizar o imóvel com as novas URLs
+              await updateProperty({
+                id: propertyId,
+                images: updatedImages,
+              });
             }
           } catch (error) {
             console.error("Erro ao mover imagens:", error);

@@ -148,8 +148,23 @@ export default function EditPropertyPage() {
         const imagesInTemp = images.filter((url) => url.includes("/temp/"));
         if (imagesInTemp.length > 0) {
           try {
-            await moveImagesFromTemp(imagesInTemp, propertyId);
-            console.log("Imagens movidas de temp/ para a pasta do imóvel");
+            // Mover imagens de temp/ para a pasta do imóvel
+            const movedImageUrls = await moveImagesFromTemp(imagesInTemp, propertyId);
+            
+            // Atualizar as URLs no array de imagens
+            const updatedImages = images.map((url) => {
+              const index = imagesInTemp.indexOf(url);
+              if (index !== -1) {
+                return movedImageUrls[index];
+              }
+              return url;
+            });
+            
+            // Atualizar o imóvel com as novas URLs
+            await updateProperty({
+              id: propertyId,
+              images: updatedImages,
+            });
           } catch (error) {
             console.error("Erro ao mover imagens:", error);
             // Continuar mesmo se houver erro ao mover imagens
