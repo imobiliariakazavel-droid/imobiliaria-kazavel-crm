@@ -46,6 +46,8 @@ export default function EditPropertyPage() {
     land: "Terreno",
     office: "Escritório",
     store: "Loja",
+    farm: "Fazenda",
+    small_farm: "Chácara",
   };
 
   // Dados do imóvel

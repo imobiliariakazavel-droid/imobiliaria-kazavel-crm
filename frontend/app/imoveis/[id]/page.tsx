@@ -66,6 +66,8 @@ export default function PropertyDetailPage() {
     land: "Terreno",
     office: "Escritório",
     store: "Loja",
+    farm: "Fazenda",
+    small_farm: "Chácara",
   };
 
   const addressVisibilityLabels: Record<string, string> = {

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase-client";
 
 // Tipos baseados na função RPC
-export type PropertyType = "house" | "apartment" | "land" | "office" | "store";
+export type PropertyType = "house" | "apartment" | "land" | "office" | "store" | "farm" | "small_farm";
 export type PropertyNegotiation = "sale" | "lease";
 export type PropertyStatus = "active" | "inactive";
 export type AddressVisibility = "state" | "state_city" | "up_to_neighborhood" | "up_to_street" | "full_address";

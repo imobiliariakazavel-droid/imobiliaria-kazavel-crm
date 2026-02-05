@@ -1,8 +1,10 @@
 Nome: Imobiliária Kazavel
 
-Sobre o projeto: É um sistema para gerencimanento de imóveis de uma imobiliaria.
+Sobre o projeto: É um sistema crm para gerencimanento de imóveis de uma imobiliaria.
 
 Cor principal: #FFCC00
 Cor secundaria: Black
 
-Logo: 
+Logo preta: https://bdxoocqlcrurivdxkxao.supabase.co/storage/v1/object/public/project/logo_black.png
+
+- Sempre deixe organizado páginas e componentes por modulos em suas pastas, o que for reutilizado pode ficar em um modulo geral.
