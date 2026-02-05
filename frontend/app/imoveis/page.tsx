@@ -30,6 +30,7 @@ export default function PropertiesPage() {
   const [negotiations, setNegotiations] = useState<PropertyNegotiation[]>([]);
   const [status, setStatus] = useState<PropertyStatus[]>(["active"]);
   const [code, setCode] = useState("");
+  const [onlyFeatured, setOnlyFeatured] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   // Buscar bairros da cidade selecionada para mapear IDs para nomes
@@ -67,6 +68,7 @@ export default function PropertiesPage() {
       negotiations,
       status,
       code,
+      onlyFeatured,
     ],
     queryFn: () =>
       getProperties({
@@ -78,6 +80,7 @@ export default function PropertiesPage() {
         negotiations: negotiations.length > 0 ? negotiations : undefined,
         status: status.length === 2 ? undefined : status.length > 0 ? status : undefined,
         code: code.trim() || undefined,
+        onlyFeatured: onlyFeatured || undefined,
       }),
   });
 
@@ -117,6 +120,7 @@ export default function PropertiesPage() {
     setNegotiations([]);
     setStatus(["active"]);
     setCode("");
+    setOnlyFeatured(false);
     setPage(1);
   };
 
@@ -135,7 +139,8 @@ export default function PropertiesPage() {
     !sortMostRecent ||
     (status.length === 1 && status[0] !== "active") ||
     status.length === 0 ||
-    code.trim().length > 0;
+    code.trim().length > 0 ||
+    onlyFeatured;
 
   return (
     <div className="w-full space-y-6">
@@ -163,6 +168,7 @@ export default function PropertiesPage() {
                   !sortMostRecent && 1,
                   ((status.length === 1 && status[0] !== "active") || status.length === 0) && 1,
                   code.trim().length > 0 && 1,
+                  onlyFeatured && 1,
                 ]
                   .filter(Boolean)
                   .reduce((a, b) => (a || 0) + (b || 0), 0)}
@@ -300,6 +306,20 @@ export default function PropertiesPage() {
                 </label>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label>Apenas Destacados</Label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={onlyFeatured}
+                  onChange={(e) => {
+                    setOnlyFeatured(e.target.checked);
+                    setPage(1);
+                  }}
+                />
+                <span className="text-sm">Mostrar apenas imóveis em destaque</span>
+              </label>
+            </div>
           </div>
 
           {/* Bairros selecionados */}
@@ -376,6 +396,11 @@ export default function PropertiesPage() {
                         <span className="text-xs font-medium text-muted-foreground">
                           {property.code}
                         </span>
+                        {property.is_featured && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#FFCC00] text-black">
+                            Em Destaque
+                          </span>
+                        )}
                       </div>
                       <h3 className="font-semibold text-lg line-clamp-2">
                         {property.title}

@@ -228,6 +228,13 @@ export default function PropertyDetailPage() {
                   </p>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Em Destaque</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {property.is_featured ? "Sim" : "Não"}
+                  </p>
+                </div>
+
                 <div className="space-y-2 md:col-span-2">
                   <Label>Descrição</Label>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">

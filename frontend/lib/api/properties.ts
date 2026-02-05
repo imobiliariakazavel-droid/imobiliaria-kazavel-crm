@@ -57,6 +57,7 @@ export interface CreatePropertyParams {
   status?: PropertyStatus;
   videos?: string[];
   images?: string[];
+  isFeatured?: boolean;
 }
 
 export interface CreatePropertyResponse {
@@ -100,6 +101,7 @@ export interface UpdatePropertyParams {
   status?: PropertyStatus;
   videos?: string[];
   images?: string[];
+  isFeatured?: boolean;
 }
 
 export interface UpdatePropertyResponse {
@@ -138,6 +140,7 @@ export interface Property {
   negotiations: PropertyNegotiation[];
   sale_value: number | null;
   lease_value: number | null;
+  is_featured: boolean;
   city: PropertyCity;
   state: PropertyState;
   neighborhood: PropertyNeighborhood;
@@ -166,6 +169,7 @@ export interface GetPropertiesParams {
   negotiations?: PropertyNegotiation[];
   status?: PropertyStatus[];
   code?: string;
+  onlyFeatured?: boolean;
 }
 
 export async function createProperty(
@@ -207,6 +211,7 @@ export async function createProperty(
     p_status: params.status || null,
     p_videos: params.videos || null,
     p_images: params.images || null,
+    p_is_featured: params.isFeatured || false,
   });
 
   if (error) {
@@ -240,6 +245,7 @@ export async function getProperties(
       ? params.status
       : null,
     p_code: params.code && params.code.trim() ? params.code.trim() : null,
+    p_only_featured: params.onlyFeatured || false,
   });
 
   if (error) {
@@ -313,6 +319,7 @@ export interface PropertyDetail {
   title: string;
   description: string | null;
   status: PropertyStatus;
+  is_featured: boolean;
   state: PropertyDetailState;
   city: PropertyDetailCity;
   neighborhood: PropertyDetailNeighborhood;
@@ -385,6 +392,7 @@ export async function updateProperty(
     p_status: params.status || null,
     p_videos: params.videos || null,
     p_images: params.images || null,
+    p_is_featured: params.isFeatured !== undefined ? params.isFeatured : null,
   });
 
   if (error) {

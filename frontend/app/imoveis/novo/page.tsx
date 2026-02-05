@@ -49,6 +49,7 @@ export default function CreatePropertyPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<PropertyStatus>("active");
+  const [isFeatured, setIsFeatured] = useState<boolean>(false);
 
   // Localização
   const [cep, setCep] = useState("");
@@ -317,6 +318,7 @@ export default function CreatePropertyPage() {
       status,
       videos: videos.length > 0 ? videos : undefined,
       images: images.length > 0 ? images : undefined,
+      isFeatured,
     });
   };
 
@@ -389,6 +391,17 @@ export default function CreatePropertyPage() {
                 <option value="active">Ativo</option>
                 <option value="inactive">Inativo</option>
               </Select>
+            </div>
+
+            <div className="space-y-2 flex items-end">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={isFeatured}
+                  onChange={(e) => setIsFeatured(e.target.checked)}
+                  disabled={mutation.isPending}
+                />
+                <span>Em Destaque</span>
+              </label>
             </div>
 
             <div className="space-y-2 md:col-span-2">
