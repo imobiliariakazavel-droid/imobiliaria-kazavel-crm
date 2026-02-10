@@ -40,6 +40,8 @@ export default function CreatePropertyPage() {
     store: "Loja",
     farm: "Fazenda",
     small_farm: "Chácara",
+    two_story_house: "Sobrado",
+    condominium: "Condomínio",
   };
 
   // Dados do imóvel

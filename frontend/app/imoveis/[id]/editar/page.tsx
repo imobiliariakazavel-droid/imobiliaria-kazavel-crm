@@ -23,7 +23,7 @@ import { CitySelect } from "@/components/ui/city-select";
 import { NeighborhoodSelect } from "@/components/ui/neighborhood-select";
 import { Loader2, Plus, X, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadImage, moveImagesFromTemp } from "@/lib/storage";
+import { uploadImage, moveImagesFromTemp, deleteImage } from "@/lib/storage";
 import Image from "next/image";
 
 export default function EditPropertyPage() {
@@ -48,6 +48,8 @@ export default function EditPropertyPage() {
     store: "Loja",
     farm: "Fazenda",
     small_farm: "Chácara",
+    two_story_house: "Sobrado",
+    condominium: "Condomínio",
   };
 
   // Dados do imóvel
@@ -99,6 +101,7 @@ export default function EditPropertyPage() {
 
   // Mídia
   const [images, setImages] = useState<string[]>([]);
+  const [originalImages, setOriginalImages] = useState<string[]>([]); // Imagens originais do banco
   const [videos, setVideos] = useState<string[]>([]);
   const [newVideoUrl, setNewVideoUrl] = useState("");
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -139,7 +142,9 @@ export default function EditPropertyPage() {
       setTotalArea(property.total_area.toString());
       setPrivateArea(property.private_area.toString());
       setUsefulArea(property.useful_area.toString());
-      setImages(property.images.map((img) => img.url));
+      const imageUrls = property.images.map((img) => img.url);
+      setImages(imageUrls);
+      setOriginalImages(imageUrls); // Guardar imagens originais
       setVideos(property.videos.map((video) => video.url));
     }
   }, [propertyData]);
@@ -150,13 +155,14 @@ export default function EditPropertyPage() {
       if (data.status) {
         // Verificar se há imagens em temp/ e movê-las para a pasta do imóvel
         const imagesInTemp = images.filter((url) => url.includes("/temp/"));
+        let finalImages = images;
         if (imagesInTemp.length > 0) {
           try {
             // Mover imagens de temp/ para a pasta do imóvel
             const movedImageUrls = await moveImagesFromTemp(imagesInTemp, propertyId);
             
             // Atualizar as URLs no array de imagens
-            const updatedImages = images.map((url) => {
+            finalImages = images.map((url) => {
               const index = imagesInTemp.indexOf(url);
               if (index !== -1) {
                 return movedImageUrls[index];
@@ -167,13 +173,17 @@ export default function EditPropertyPage() {
             // Atualizar o imóvel com as novas URLs
             await updateProperty({
               id: propertyId,
-              images: updatedImages,
+              images: finalImages,
             });
           } catch (error) {
             console.error("Erro ao mover imagens:", error);
             // Continuar mesmo se houver erro ao mover imagens
+            finalImages = images.filter((url) => !url.includes("/temp/"));
           }
         }
+
+        // Atualizar as imagens originais para refletir o estado atual
+        setOriginalImages(finalImages);
 
         // Invalidar cache do imóvel específico e da lista de imóveis
         queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
@@ -261,7 +271,7 @@ export default function EditPropertyPage() {
     setVideos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -319,6 +329,28 @@ export default function EditPropertyPage() {
     if (visibilityValues.length === 0) {
       setError("Selecione pelo menos um valor de visibilidade");
       return;
+    }
+
+    // Identificar imagens removidas (existem nas originais mas não nas atuais)
+    const removedImages = originalImages.filter(
+      (originalUrl) => !images.includes(originalUrl)
+    );
+
+    // Deletar imagens removidas do storage (apenas as que não estão em temp/)
+    if (removedImages.length > 0) {
+      try {
+        const deletePromises = removedImages
+          .filter((url) => !url.includes("/temp/")) // Não deletar imagens em temp/
+          .map((url) => deleteImage(url).catch((error) => {
+            console.error(`Erro ao deletar imagem ${url}:`, error);
+            // Continuar mesmo se houver erro ao deletar
+          }));
+        
+        await Promise.all(deletePromises);
+      } catch (error) {
+        console.error("Erro ao deletar imagens removidas:", error);
+        // Continuar mesmo se houver erro ao deletar
+      }
     }
 
     mutation.mutate({

@@ -68,6 +68,8 @@ export default function PropertyDetailPage() {
     store: "Loja",
     farm: "Fazenda",
     small_farm: "Chácara",
+    two_story_house: "Sobrado",
+    condominium: "Condomínio",
   };
 
   const addressVisibilityLabels: Record<string, string> = {
